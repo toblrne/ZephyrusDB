@@ -34,22 +34,20 @@ type Driver struct {
 func New(dir string, logger Logger, cacheSize int) (*Driver, error) {
 	dir = filepath.Clean(dir)
 
+	// Initialize logger if not provided
 	if logger == nil {
 		logger = lumber.NewConsoleLogger(lumber.INFO)
 	}
 
-	driver := &Driver{
-		dir: dir,
-		log: logger,
-	}
-
-	// Create directory if it does not exist
+	// Create the directory if it does not exist
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		logger.Info("Creating the database at '%s' ...\n", dir)
-		return driver, os.MkdirAll(dir, 0755)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, err
+		}
+	} else {
+		logger.Info("Using '%s' (database already exists)\n", dir)
 	}
-
-	logger.Info("Using '%s' (database already exists)\n", dir)
 
 	// Initialize the cache with an eviction callback
 	cache, err := lru.NewWithEvict(cacheSize, func(key interface{}, value interface{}) {
@@ -58,10 +56,15 @@ func New(dir string, logger Logger, cacheSize int) (*Driver, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create LRU cache: %v", err)
 	}
-	driver.cache = cache
+
+	// Create the Driver with the initialized cache
+	driver := &Driver{
+		dir:   dir,
+		log:   logger,
+		cache: cache,
+	}
 
 	return driver, nil
-
 }
 
 // Put sets the value for a key
