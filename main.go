@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Initialize the db driver
-	driver, err := db.New("./data", nil) // replace with your desired directory and logger
+	driver, err := db.New("./data", nil, 25)
 	if err != nil {
 		fmt.Println("Failed to initialize db:", err)
 	}
