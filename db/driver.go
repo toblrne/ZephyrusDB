@@ -191,10 +191,6 @@ func (d *Driver) Compact() error {
 			}
 			d.log.Info("Removed temporary file during compaction: %s", file.Name())
 		}
-
-		// Here you can add additional checks and cleanup logic as needed
-		// For example, you might want to check for files that haven't been accessed in a long time
-		// and consider removing them or moving them to a backup location.
 	}
 
 	return nil
