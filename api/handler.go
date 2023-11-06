@@ -2,9 +2,8 @@ package api
 
 import (
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 	"github.com/toblrne/ZephyrusDBv2/db"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
