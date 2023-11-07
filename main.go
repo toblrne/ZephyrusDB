@@ -72,5 +72,4 @@ func main() {
 		fmt.Println("B-tree successfully serialized to file")
 	}
 
-	// Perform any other necessary cleanup here
 }

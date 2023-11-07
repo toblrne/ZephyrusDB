@@ -8,7 +8,6 @@ import (
 func InitRouter(handler *Handler) *gin.Engine {
 	router := gin.Default()
 
-	// Define your API endpoints here
 	router.PUT("/key/:key", handler.PutValue)
 	router.GET("/key/:key", handler.GetValue)
 	router.DELETE("/key/:key", handler.DeleteValue)
