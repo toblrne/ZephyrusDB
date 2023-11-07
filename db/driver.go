@@ -239,6 +239,9 @@ func (d *Driver) SerializeBTree(filePath string) error {
 		return true
 	})
 
+	d.log.Info("Items to serialize: %v", items)   // Log the items to be serialized
+	d.log.Info("B-tree length: %d", d.tree.Len()) // Log the length of the B-tree
+
 	data, err := json.Marshal(items)
 	if err != nil {
 		d.log.Error("Error serializing B-tree: %v", err)
@@ -276,11 +279,16 @@ func (d *Driver) DeserializeBTree(filePath string) error {
 		return err
 	}
 
+	d.log.Info("Items deserialized: %v", items) // Log the items after deserialization
+
 	d.tree.Clear(false)
 	for _, itm := range items {
-		d.tree.ReplaceOrInsert(&itm)
+		itmCopy := itm // Create a copy of itm
+		d.tree.ReplaceOrInsert(&itmCopy)
 	}
 
 	d.log.Info("Successfully deserialized B-tree from %s", filePath)
+	d.log.Info("B-tree length after deserialization: %d", d.tree.Len()) // Log the length of the B-tree
+
 	return nil
 }

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
+	"time"
 
 	"github.com/toblrne/ZephyrusDBv2/api"
 	"github.com/toblrne/ZephyrusDBv2/db"
@@ -26,8 +28,6 @@ func main() {
 		// Handle deserialization failure if necessary
 	}
 
-	var wg sync.WaitGroup
-
 	// Setup channel to listen for signals
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -38,36 +38,39 @@ func main() {
 	// Set up the router
 	router := api.InitRouter(handler)
 
-	// Start the server
-	fmt.Println("Server starting on :8080")
-	wg.Add(1)
+	// Create the HTTP server
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
+
+	// Start the server in a goroutine
 	go func() {
-		if err := router.Run(":8080"); err != nil {
+		fmt.Println("Server starting on :8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Printf("Server failed to start: %v\n", err)
 		}
-		wg.Done()
 	}()
 
-	// This goroutine executes a graceful shutdown
-	go func() {
-		<-sigs
-		fmt.Println("\nReceived shutdown signal")
+	// Wait for interrupt signal to gracefully shutdown the server
+	<-sigs
+	fmt.Println("\nReceived shutdown signal")
 
-		// Serialize the B-tree to the file before exiting
-		if err := driver.SerializeBTree(btreeFilePath); err != nil {
-			fmt.Println("Failed to serialize the B-tree:", err)
-		} else {
-			fmt.Println("B-tree successfully serialized to file")
-		}
+	// Create a deadline to wait for.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		// Perform any other necessary cleanup
+	// Doesn't block if no connections, but will otherwise wait until the timeout deadline.
+	if err := srv.Shutdown(ctx); err != nil {
+		fmt.Printf("Server forced to shutdown: %v\n", err)
+	}
 
-		// Wait for all operations to complete
-		wg.Wait()
+	// Serialize the B-tree to the file before exiting
+	if err := driver.SerializeBTree(btreeFilePath); err != nil {
+		fmt.Println("Failed to serialize the B-tree:", err)
+	} else {
+		fmt.Println("B-tree successfully serialized to file")
+	}
 
-		os.Exit(0)
-	}()
-
-	// Block main goroutine until it's signaled to shut down
-	wg.Wait()
+	// Perform any other necessary cleanup here
 }
